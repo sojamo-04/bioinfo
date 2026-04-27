@@ -1,0 +1,149 @@
+---
+title: "Práctica 12"
+format: html
+engine: knitr
+embed-resources: true
+editor: visual
+---
+
+# Práctica 12. Análisis de expresión diferencial
+
+### Ejercicio 1
+
+```{r}
+muestras <- read.table('../../data/dme_elev_samples.tsv', header = TRUE)
+genex <- read.table('../../data/salmon.merged.gene_counts.tsv',
+                    header = TRUE)
+```
+
+1. Usa la función paste() para añadir una columna a muestras que contenga la población y la temperatura unidas por _.
+
+```{r}
+muestras$grupo <- paste(muestras$population, muestras$temp, sep = "_")
+
+head(muestras)
+```
+2. ¿Cuál es el número total de lecturas por muestra?
+```{r}
+colSums(genex[ , -c(1,2)])
+```
+Este código nos da el total de lecturas para cada muestra.
+
+3. ¿Los recuentos tienen distribuciones parecidas entre muestras?
+```{r}
+boxplot(genex[ , -c(1, 2)], las = 2, main = "distribución de recuentos por muestra")
+```
+De manera general sí observamos un número de lecturas similar entre las 12 muestras.
+
+Otra forma:
+```{r}
+plot(density(genex[ , 3]), log='xy')
+```
+
+
+4. ¿Cuántos genes no se expresan en absoluto en ninguna de las muestras?
+```{r}
+# 1. Separamos solo las columnas numéricas (de la 3 en adelante)
+conteos <- genex[, 3:ncol(genex)]
+
+# 2. Identificamos qué filas suman 0 en todas las muestras
+genes_no_expresados_idx <- rowSums(conteos) == 0
+
+# 3. Extraemos la información de esos genes
+genes_nulos <- genex[genes_no_expresados_idx, c("gene_id", "gene_name")]
+
+# Ver el total y los primeros resultados
+nrow(genes_nulos)
+head(genes_nulos)
+```
+
+## Crear el objeto de clase DESeqDataSet
+
+```{r}
+# para que las filas de la tabla muestras estén en el mismo orden que las columnas en genex:
+suppressMessages(library('DESeq2'))
+all(names(genex)[3:14] == muestras$sample) #si ejecutamos esto dará TRUE, es una comprobación. Lo que comprueba es que los nombres de las columnas 3 a la 14 de genex tienen los mismos nombres que la columna sample de muestras.
+
+# Pasamos la columna "sample" a nombres de fila:
+row.names(muestras) <- muestras$sample #sirve para facilitar el trabajo después, nos quedamos solo con los factores.
+
+# Eliminamos la columna "sample", pues esta información está en los nombres de las filas:
+muestras$sample <- NULL
+
+# Y convertimos "population" y "temp" en factores (variables categoricas que solo admiten unos valores concretos posibles):
+muestras$population <- factor(muestras$population,
+                              levels = c('maine', 'panama'))
+muestras$temp       <- factor(muestras$temp,
+                              levels = c('low', 'high'))
+muestras
+```
+```{r}
+# Los datos de recuento deben ser números enteros y en forma de matriz. El programa saca medias de lectura cuando no sabe si una lectura puede ser de un gen o de otro, por esto es que debemos utilizar round para que se redondeen a números enteros.
+row.names(genex) <- genex$gene_name
+genex$gene_name <- NULL 
+genex$gene_id   <- NULL # nos deshacemos de todo el contenido no numérico en la tabla
+genex <- round(as.matrix(genex))
+
+#Creamos este objeto a partir de la matriz:
+dds1 <- DESeqDataSetFromMatrix(
+   countData = genex, # recuento de lecturas que mapean cada gen
+   colData = muestras, # datos de las culumnas, que son las muestras. la cosa es que la info de cada columna de muestras debe coincidir con las de las filas de genex. Esto no lo comprueba, por lo que es importante que lo hayamos hecho nosotros antes.
+   design = ~ population + temp # son las variables explicativas para la varible respuesta (la expresión de los genes)
+)
+dds1
+```
+
+Una fracción importante de genes no se están expresando en ningúna muestra. Para eliminarlos de los datos que vamos a seguir utilizando el resto de la práctica:
+```{r}
+keep <- rowSums(counts(dds1)) > 0 # usamos counts para acceder a la matriz que en este momento es idéntica a genex. Le decimos que sume las filas y diga en qué filas la suma es mayor a 0 (el resultado es una serie de TRUE,TRUE, FALSE..., y será FALSE en aquellas donde no se expresa el gen en ninguna muestra). 
+# Este vector después sirve para seleccionar las filas que nos quedamos:
+dds1 <- dds1[keep, ]
+```
+
+```{r}
+dds1 <- DESeq(dds1)
+res <- results(dds1)
+res
+# la función results() produce la tabla de resultados para el contraste entre el nivel último y el de referencia del último factor en la tabla que describe las muestras. 
+#En este caso, el factor es temp, el nivel de referencia es low y el otro nivel es high. Por tanto, los valores de log2FoldChange representan el logaritmo en base 2 de la relación entre niveles de expresión en muestras high respecto de muestras low.
+```
+
+Vemos el resultado en una tabla, donde las columnas son basemean, log2foldchange, LFCSE, stat, pval y padj. 
+
+-baseMean: nivel de expresión base
+-log2FoldChange:  logaritmo base 2 de la expresión en una concidión respecto a la otra (log2 = expresión en condición x / expresión en referencia). Es importante saber cuál es el valor de referencia, que en este caso era "low": si es positivo, el gen se expresa más en temperatura alta respecto a la baja, y lo contrario para valores negativos.
+- lfcSE: error estándar
+- stat: estadístico
+- pval: valor p
+- padj: valor p ajustado porque estamos analizando muchos genes.
+
+### Ejercicio 3
+
+1. Mira la ayuda de results() y genera también la tabla de resultados para el contraste entre las dos regiones de procedencia de las moscas.
+
+Para comparar resultados de la tabla results, utilizamos contrast. Si no le decimos el contraste que queremos hacer no podremos analizar bien los datos. Así, comparamos la expresión diferencial entre panama respecto a maine:
+```{r}
+res_poblacion <- results(dds1, contrast = c("population", "panama", "maine"))
+
+head(res_poblacion)
+```
+
+2. Usa summary() sobre los resultados para ver el número de genes diferencialmente expresados entre cada par de condiciones.
+```{r}
+summary(res)
+summary(res_poblacion)
+```
+LFC > 0 es que está up-regulated. Cuando es < 0 será down-regulated. Vemos comparando ambos summaries que la variable que más afecta a la expresión génica es la temperatura, pues hay 2418 genes sobreexpresados y 2336 infraexpresados, frente a la menor cantidad de los encontrados en la comparación por región/población.
+
+El número de genes diferencialmente expresados son 19508.
+
+3. ¿Cuál es la tasa de falsos positivos (FDR)?
+
+La tasa FDR, según la ayuda de DESeq, es igual al umbral del valor de p-valor ajustado, que en summary podemos ver que es 0.1.
+
+
+
+
+
+
+
