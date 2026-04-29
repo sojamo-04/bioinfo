@@ -12,6 +12,7 @@ language:
 format:
    html:
       embed-resources: true
+bibliography: ../../reference.bib
 ---
 
 # Preparación

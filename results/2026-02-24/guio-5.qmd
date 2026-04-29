@@ -12,6 +12,8 @@ language:
 format:
    html:
       embed-resources: true
+bibliography: ../../reference.bib
+
 ---
 
 ```{r setup, include=FALSE}

@@ -3,6 +3,7 @@ title: "practica-10"
 format: html
 editor: visual
 engine: knitr
+bibliography: ../../reference.bib
 ---
 
 # Ejercicio 1
@@ -70,16 +71,18 @@ TOTAL_BASES=$(zcat ../../data/At4.10.fa.gz | grep -v "^>" | tr -d '\n' | wc -c)
 echo "$TOTAL_BASES / 19000000" | bc -l
 ```
 
-Como es de aproximadamente 13, decimos que cada base se ha leído aproximadamente unas 13 veces. Es suficiente, pero normalmente para que sea de buena calidad se necesita que sea una cobertura de 30 o más.
-La cobertura es muy dispersa: pueden haber bases que sí hayan sido leídas 13 veces, pero es muy probable que otras solo hayan sido leídas 2 o 3 veces o que incluso algunas bases no se hayan llegado a leer. Es por esto que se considera que el mínimo para ser fiable es una cobertura de alrededor de 30.
+Como es de aproximadamente 13, decimos que cada base se ha leído aproximadamente unas 13 veces. Es suficiente, pero normalmente para que sea de buena calidad se necesita que sea una cobertura de 30 o más. La cobertura es muy dispersa: pueden haber bases que sí hayan sido leídas 13 veces, pero es muy probable que otras solo hayan sido leídas 2 o 3 veces o que incluso algunas bases no se hayan llegado a leer. Es por esto que se considera que el mínimo para ser fiable es una cobertura de alrededor de 30.
 
 # Ejercicio 2
 
 Para guardar los archivos de salida en una carpeta ordenada:
+
 ```{bash}
 if [ ! -d asm1 ]; then mkdir asm1; fi
 ```
+
 Para el ensamblaje de las lecturas:
+
 ```{bash}
 #| cache: true
 export PATH=$PATH:~/bin/hifiasm
@@ -89,15 +92,16 @@ fi
 ```
 
 ### ¿Genoma haploide o diploide?
+
 En los resultados de la carpeta asm1, encontramos varios archivos que se llaman hap1 y otros hap2, por lo que deducimos que se trata de un genoma con dos haplotipos, es decir, diploide.
 
-### Nivel de eliminación de duplicaciones 
+### Nivel de eliminación de duplicaciones
 
 En la ayuda de hifiasm, en el apartado de purge-dups encontramos que para análisis de archivos unzip, que es solo un genoma, el valor por defeccto de eliminación de duplicaciones es 3, que es agresivo.
 
 ### Si tuvieramos lecturas ultra-largas, ¿con qué opción o argumento añadiríamos esa información?
 
-Para añadir las lecturas ultra-largas al resultado del ensamblaje, usamos seguido de hifiasm --ul [archivolecturasultra-largas.fq]
+Para añadir las lecturas ultra-largas al resultado del ensamblaje, usamos seguido de hifiasm --ul \[archivolecturasultra-largas.fq\]
 
 Le añades las lecturas largas a las HiFi que ya teníamos antes. Se añaden al ensamblaje principal como información adicional.
 
@@ -105,18 +109,15 @@ Le añades las lecturas largas a las HiFi que ya teníamos antes. Se añaden al 
 
 ### ¿Dónde están las secuencias que componen el ensamblaje?
 
-En los archivos .p_ctg.gfa se encuentran las secuencias, pero como es un grafo contiene el mapa del genoma, las conexiones.
-Las secuencias están en las líneas S.
-Podemos convertir el archivo a FASTA y así tener solo las secuencias:
+En los archivos .p_ctg.gfa se encuentran las secuencias, pero como es un grafo contiene el mapa del genoma, las conexiones. Las secuencias están en las líneas S. Podemos convertir el archivo a FASTA y así tener solo las secuencias:
+
 ```{bash}
 awk '(/^S/){print ">" $2 "\n" $3}' asm1/At4.bp.p_ctg.gfa > asm1/At4.fa
 ```
 
-
 ### En los archivos .gfa, ¿qué son las líneas que empiezan por ‘A’?
 
-Dan información sobre cómo se asignan las lecturas o contigs a un haplotipo. Deciden qué contig va en cada haplotipo, mejora el phasing y resuelve ambigüedades en regiones complejas. 
-Son información adicional del algoritmo, no son imprescindibles para el ensamblaje final.
+Dan información sobre cómo se asignan las lecturas o contigs a un haplotipo. Deciden qué contig va en cada haplotipo, mejora el phasing y resuelve ambigüedades en regiones complejas. Son información adicional del algoritmo, no son imprescindibles para el ensamblaje final.
 
 ### ¿Qué información tiene los archivos .bed?
 
@@ -126,67 +127,11 @@ Contienen lecturas de baja calidad (lowQ.bed) en formato BED.
 
 La información sobre esto se encuentra en el archivo .log. Encontramos este histograma tumbado que representa la longitud de los k-meros:
 
-[M::ha_hist_line]     1: ****************************************************************************************************> 145173
-[M::ha_hist_line]     2: ********* 9996
-[M::ha_hist_line]     3: ***** 5052
-[M::ha_hist_line]     4: **** 4403
-[M::ha_hist_line]     5: **** 4170
-[M::ha_hist_line]     6: **** 4527
-[M::ha_hist_line]     7: ******* 7229
-[M::ha_hist_line]     8: ***************** 18282
-[M::ha_hist_line]     9: **************************************** 42213
-[M::ha_hist_line]    10: ************************************************************************ 76020
-[M::ha_hist_line]    11: ************************************************************************************************** 103716
-[M::ha_hist_line]    12: **************************************************************************************************** 105344
-[M::ha_hist_line]    13: **************************************************************************** 79800
-[M::ha_hist_line]    14: ******************************************* 44954
-[M::ha_hist_line]    15: ****************** 19289
-[M::ha_hist_line]    16: ******* 7008
-[M::ha_hist_line]    17: ** 2531
-[M::ha_hist_line]    18: * 1194
-[M::ha_hist_line]    19: * 1032
-[M::ha_hist_line]    20: * 1041
-[M::ha_hist_line]    21: * 1193
-[M::ha_hist_line]    22: * 1212
-[M::ha_hist_line]    23: * 1127
-[M::ha_hist_line]    24: * 1108
-[M::ha_hist_line]    25: * 914
-[M::ha_hist_line]    26: * 843
-[M::ha_hist_line]    27: * 613
-[M::ha_hist_line]    28: * 595
-[M::ha_hist_line]  rest: ******** 8609
+\[M::ha_hist_line\] 1: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\> 145173 \[M::ha_hist_line\] 2: \*\*\*\*\*\*\*\*\* 9996 \[M::ha_hist_line\] 3: \*\*\*\*\* 5052 \[M::ha_hist_line\] 4: \*\*\*\* 4403 \[M::ha_hist_line\] 5: \*\*\*\* 4170 \[M::ha_hist_line\] 6: \*\*\*\* 4527 \[M::ha_hist_line\] 7: \*\*\*\*\*\*\* 7229 \[M::ha_hist_line\] 8: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 18282 \[M::ha_hist_line\] 9: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 42213 \[M::ha_hist_line\] 10: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 76020 \[M::ha_hist_line\] 11: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 103716 \[M::ha_hist_line\] 12: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 105344 \[M::ha_hist_line\] 13: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 79800 \[M::ha_hist_line\] 14: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 44954 \[M::ha_hist_line\] 15: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 19289 \[M::ha_hist_line\] 16: \*\*\*\*\*\*\* 7008 \[M::ha_hist_line\] 17: \*\* 2531 \[M::ha_hist_line\] 18: \* 1194 \[M::ha_hist_line\] 19: \* 1032 \[M::ha_hist_line\] 20: \* 1041 \[M::ha_hist_line\] 21: \* 1193 \[M::ha_hist_line\] 22: \* 1212 \[M::ha_hist_line\] 23: \* 1127 \[M::ha_hist_line\] 24: \* 1108 \[M::ha_hist_line\] 25: \* 914 \[M::ha_hist_line\] 26: \* 843 \[M::ha_hist_line\] 27: \* 613 \[M::ha_hist_line\] 28: \* 595 \[M::ha_hist_line\] rest: \*\*\*\*\*\*\*\* 8609
 
 Tras la corrección de errores, vemos como disminuye mucho el pico del 1:
 
-[M::ha_hist_line]     1: ***************** 18258
-[M::ha_hist_line]     2: ******* 8085
-[M::ha_hist_line]     3: **** 4674
-[M::ha_hist_line]     4: **** 4168
-[M::ha_hist_line]     5: **** 3917
-[M::ha_hist_line]     6: **** 4175
-[M::ha_hist_line]     7: ***** 5787
-[M::ha_hist_line]     8: ************* 14398
-[M::ha_hist_line]     9: ******************************** 35408
-[M::ha_hist_line]    10: *************************************************************** 69154
-[M::ha_hist_line]    11: ********************************************************************************************* 100858
-[M::ha_hist_line]    12: **************************************************************************************************** 108972
-[M::ha_hist_line]    13: ******************************************************************************** 86992
-[M::ha_hist_line]    14: *********************************************** 51153
-[M::ha_hist_line]    15: ********************* 22694
-[M::ha_hist_line]    16: ******** 8359
-[M::ha_hist_line]    17: *** 2978
-[M::ha_hist_line]    18: * 1231
-[M::ha_hist_line]    19: * 981
-[M::ha_hist_line]    20: * 991
-[M::ha_hist_line]    21: * 1121
-[M::ha_hist_line]    22: * 1173
-[M::ha_hist_line]    23: * 1104
-[M::ha_hist_line]    24: * 1219
-[M::ha_hist_line]    25: * 965
-[M::ha_hist_line]    26: * 939
-[M::ha_hist_line]    27: * 614
-[M::ha_hist_line]    28: * 660
-[M::ha_hist_line]  rest: ******** 8796
+\[M::ha_hist_line\] 1: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 18258 \[M::ha_hist_line\] 2: \*\*\*\*\*\*\* 8085 \[M::ha_hist_line\] 3: \*\*\*\* 4674 \[M::ha_hist_line\] 4: \*\*\*\* 4168 \[M::ha_hist_line\] 5: \*\*\*\* 3917 \[M::ha_hist_line\] 6: \*\*\*\* 4175 \[M::ha_hist_line\] 7: \*\*\*\*\* 5787 \[M::ha_hist_line\] 8: \*\*\*\*\*\*\*\*\*\*\*\*\* 14398 \[M::ha_hist_line\] 9: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 35408 \[M::ha_hist_line\] 10: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 69154 \[M::ha_hist_line\] 11: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 100858 \[M::ha_hist_line\] 12: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 108972 \[M::ha_hist_line\] 13: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 86992 \[M::ha_hist_line\] 14: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 51153 \[M::ha_hist_line\] 15: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\* 22694 \[M::ha_hist_line\] 16: \*\*\*\*\*\*\*\* 8359 \[M::ha_hist_line\] 17: \*\*\* 2978 \[M::ha_hist_line\] 18: \* 1231 \[M::ha_hist_line\] 19: \* 981 \[M::ha_hist_line\] 20: \* 991 \[M::ha_hist_line\] 21: \* 1121 \[M::ha_hist_line\] 22: \* 1173 \[M::ha_hist_line\] 23: \* 1104 \[M::ha_hist_line\] 24: \* 1219 \[M::ha_hist_line\] 25: \* 965 \[M::ha_hist_line\] 26: \* 939 \[M::ha_hist_line\] 27: \* 614 \[M::ha_hist_line\] 28: \* 660 \[M::ha_hist_line\] rest: \*\*\*\*\*\*\*\* 8796
 
 Vemos que no hay otro pico en 6, que solo hay un pico en 12: es un individuo homocigoto.
 

@@ -3,6 +3,7 @@ title: "guion09.qmd"
 format: 
    html: 
     embed-resources: true #para que  todos los archivos que necesita el html o que genera se queden en el mismo archivo, si no se toma la libertad de ocupar lo que quiera y generar archivos o carpetas secundarios.
+bibliography: ../../reference.bib
 ---
 ```{r}
 library(phangorn)
